@@ -1,11 +1,10 @@
 import React from "react";
+import { HashRouter } from "react-router-dom";
+import RouterView from "./router";
 
-function App() {
-  return (
-    <div className="App">
-      zhihu
-    </div>
-  );
+const App = function App() {
+    return <HashRouter>
+        <RouterView />
+    </HashRouter>
 }
-
-export default App;
+export default App
