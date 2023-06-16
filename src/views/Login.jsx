@@ -5,15 +5,18 @@ import './Login.less'
 import ButtonAgain from "../components/ButtonAgain";
 import api from '../api'
 import _ from '../assets/utils'
+import { connect } from "react-redux";
+import action from '../store/actions'
 
-const Login = function Login() {
+const Login = function Login(props) {
+    let { queryUserInfoAsync, navigate, usp } = props
     /* 状态 */
     const [formIns] = Form.useForm()
     let [disabled, setDisabled] = useState(false),
         [sendText, setSendText] = useState('发送验证码')
     /* 发送验证码 */
     let timer = null,
-        num = 11
+        num = 31
     const countdown = () => {
         num--
         if (num === 0) {
@@ -60,7 +63,7 @@ const Login = function Login() {
             let results = formIns.getFieldsValue()
             let { code, token } = await api.login(results.phone, results.code)
             if (+code !== 0) {
-                Toast({
+                Toast.show({
                     icon: 'fail',
                     content: '登录失败'
                 })
@@ -69,6 +72,13 @@ const Login = function Login() {
             }
             // 登录成功：存储token、存储登录者信息到redux、提示、跳转
             _.storage.set('tk', token)
+            await queryUserInfoAsync()// 派发任务，同步redux中的状态信息
+            Toast.show({
+                icon: 'success',
+                content: '登录|注册成功'
+            })
+            let to = usp.get('to')
+            to ? navigate(to, { replace: true }) : navigate(-1)
         } catch (_) { }
     }
     /* 自定义表单校验规则 */
@@ -114,4 +124,7 @@ const Login = function Login() {
         </Form>
     </div>
 }
-export default Login
+export default connect(
+    null,
+    action.base
+)(Login)
