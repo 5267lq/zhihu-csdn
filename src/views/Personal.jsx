@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { RightOutline } from 'antd-mobile-icons';
 import styled from "styled-components";
 import NavBarAgain from '../components/NavBarAgain';
-import _ from '../assets/utils'
 import { connect } from "react-redux";
 import action from "../store/actions";
+import _ from '../assets/utils'
+import { Toast } from "antd-mobile";
 
 /* 样式 */
 const PersonalBox = styled.div`
@@ -40,9 +41,22 @@ const PersonalBox = styled.div`
 `;
 
 const Personal = function Personal(props) {
-    let { info } = props
+    let { info, clearUserInfo, clearStoreList, navigate } = props
     // 退出登录
-    const signout = () => { }
+    const signout = () => {
+        // 清除redux中的信息
+        clearUserInfo()
+        clearStoreList()
+        // 清除token
+        _.storage.remove('tk')
+        // 提示
+        Toast.show({
+            icon: 'success',
+            content: '成功退出'
+        })
+        // 跳转
+        navigate('/login?to=/personal', { replace: true })
+    }
     return <PersonalBox>
         <NavBarAgain title="个人中心" />
         <div className="baseInfo">
@@ -65,5 +79,8 @@ const Personal = function Personal(props) {
 };
 export default connect(
     state => state.base,
-    action.base
+    {
+        clearUserInfo: action.base.clearUserInfo,
+        clearStoreList: action.store.clearStoreList
+    }
 )(Personal)

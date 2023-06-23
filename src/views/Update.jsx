@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import NavBarAgain from '../components/NavBarAgain';
 import ButtonAgain from '../components/ButtonAgain';
 import styled from "styled-components";
-import { ImageUploader, Input } from 'antd-mobile';
+import { ImageUploader, Input, Toast } from 'antd-mobile';
+import { connect } from "react-redux"
+import action from '../store/actions'
+import api from "../api"
 
 /* 样式 */
 const UpdateBox = styled.div`
@@ -36,15 +39,74 @@ const UpdateBox = styled.div`
     }
 `;
 
-const Update = function Update() {
-
+const Update = function Update(props) {
+    let { info, queryUserInfoAsync, navigate } = props
     /* 定义状态 */
-
+    let [pic, setPic] = useState([{ url: info.pic }]),
+        [username, setUsername] = useState(info.name)
     /* 图片上传：限制图片大小 & 上传图片 */
-
+    const limitImage = (file) => {
+        let limit = 1024 * 1024
+        if (file.size > limit) {
+            Toast.show({
+                icon: 'fail',
+                content: '图片需在1MB内'
+            })
+            return null
+        }
+        return file
+    }
+    const uploadImage = async (file) => {
+        let temp
+        try {
+            let { code, pic } = await api.upload(file)
+            if (+code !== 0) {
+                Toast.show({
+                    icon: 'fail',
+                    content: '图片上传失败'
+                })
+                return
+            }
+            temp = pic
+            setPic([{ url: pic }])
+        } catch (_) { }
+        return { url: temp }
+    }
     /* 提交信息 */
-    const submit = () => {
-
+    const submit = async () => {
+        // 表单校验
+        if (pic.length === 0) {
+            Toast.show({
+                icon: 'fail',
+                content: '请上传要修改的头像'
+            })
+            return
+        }
+        if (username.trim() === "") {
+            Toast.show({
+                icon: 'fail',
+                content: '请输入要修改的用户名'
+            })
+            return
+        }
+        // 获取信息，发送请求
+        let [{ url }] = pic
+        try {
+            let { code } = await api.userUpdate(username.trim(), url)
+            if (+code !== 0) {
+                Toast.show({
+                    icon: 'fail',
+                    content: '修改个人信息失败'
+                })
+                return
+            }
+            Toast.show({
+                icon: 'success',
+                content: '修改个人信息成功'
+            })
+            queryUserInfoAsync()// 同步redux中的信息
+            navigate(-1)
+        } catch (_) { }
     }
     return <UpdateBox>
         <NavBarAgain title="修改信息" />
@@ -53,15 +115,23 @@ const Update = function Update() {
                 <div className="label">头像</div>
                 <div className="input">
                     <ImageUploader
+                        value={pic}
                         maxCount={1}
-                        onDelete={() => { }}
+                        onDelete={() => {
+                            setPic([])
+                        }}
+                        beforeUpload={limitImage}
+                        upload={uploadImage}
                     />
                 </div>
             </div>
             <div className="item">
                 <div className="label">姓名</div>
                 <div className="input">
-                    <Input placeholder='请输入账号名称' />
+                    <Input placeholder='请输入账号名称' value={username}
+                        onChange={val => {
+                            setUsername(val)
+                        }} />
                 </div>
             </div>
             <ButtonAgain color='primary' className="submit" onClick={submit}>
@@ -70,4 +140,7 @@ const Update = function Update() {
         </div>
     </UpdateBox>;
 };
-export default Update
+export default connect(
+    state => state.base,
+    action.base
+)(Update)

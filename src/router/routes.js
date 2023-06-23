@@ -1,10 +1,11 @@
 import Home from "../views/Home";
 import { lazy } from "react";
+import { withKeepAlive } from "keepalive-react-component/lib";
 
 const routes = [{
     path: '/',
     name: 'home',
-    component: Home,
+    component: withKeepAlive(Home, { cacheId: 'home', scroll: true }),
     meta: {
         title: '52lkk-首页'
     }
